@@ -29,6 +29,7 @@ class CianPollingJob(
             log.debug("No search URLs configured, skipping poll cycle")
             return
         }
+        log.debug("Starting poll cycle for {} search URL(s)", properties.searchUrls.size)
         properties.searchUrls.forEach(::pollOne)
     }
 
@@ -41,13 +42,19 @@ class CianPollingJob(
     private fun pollOne(searchUrl: String) {
         repeat(MAX_ATTEMPTS_PER_URL) { attempt ->
             val proxy = proxyPool.current()
+            log.debug("Polling {} (attempt {}/{}) via proxy {}", searchUrl, attempt + 1, MAX_ATTEMPTS_PER_URL, proxy)
             try {
                 val offers = offerFetcher.fetch(searchUrl, proxy)
+                log.debug("Parsed offer ids for {}: {}", searchUrl, offers.map { it.id })
                 val seen = seenOffersStore.seenIds(searchUrl)
                 val newOffers = offers.filter { seen.add(it.id) }
+                log.debug("New offer ids for {}: {}", searchUrl, newOffers.map { it.id })
                 newOffers.forEach { offer ->
+                    log.debug("Enriching offer {} with better photos", offer.id)
                     val enriched = offerFetcher.enrichWithBetterPhotos(offer, proxyPool.current())
+                    log.debug("Downloading {} photo(s) for offer {}", enriched.photos.size, offer.id)
                     val photos = offerFetcher.downloadPhotos(enriched, proxyPool.current())
+                    log.debug("Downloaded {} photo(s) for offer {}", photos.size, offer.id)
                     telegramNotifier.notifyNewOffer(enriched, photos)
                 }
                 log.info("Polled {} ({} offers, {} new)", searchUrl, offers.size, newOffers.size)

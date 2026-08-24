@@ -2,6 +2,10 @@ spring:
   application:
     name: parser
 
+logging:
+  level:
+    ru.ukorp.parser: ${LOG_LEVEL:INFO}
+
 parser:
   poll-interval: 5m
   search-urls: ${SEARCH_URLS}

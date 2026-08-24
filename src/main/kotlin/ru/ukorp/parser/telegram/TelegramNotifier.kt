@@ -30,6 +30,7 @@ class TelegramNotifier(
     fun notifyNewOffer(offer: CianOffer, photos: List<ByteArray>) {
         val chatId = properties.telegram.chatId
         val caption = buildMessage(offer)
+        log.debug("Sending Telegram notification for offer {} to chat {} ({} photo(s))", offer.id, chatId, photos.size)
 
         val response = when {
             photos.size >= 2 -> bot.execute(SendMediaGroup(chatId, *mediaGroup(photos, caption)))

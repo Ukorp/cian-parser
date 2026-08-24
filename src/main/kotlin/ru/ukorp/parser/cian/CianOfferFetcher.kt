@@ -24,7 +24,9 @@ class CianOfferFetcher(
     fun fetch(searchUrl: String, proxy: ProxyCandidate?): List<CianOffer> {
         val html = fetchHtml(searchUrl, proxy)
         val document = Jsoup.parse(html, searchUrl)
-        return htmlParser.parse(document)
+        val offers = htmlParser.parse(document)
+        log.debug("Fetched {} ({} bytes) -> {} offer(s)", searchUrl, html.length, offers.size)
+        return offers
     }
 
     /**
@@ -41,6 +43,7 @@ class CianOfferFetcher(
             return offer
         }
         val betterPhotos = CianImageExtractor.extractBestImages(html, limit = 5)
+        log.debug("Enrichment for offer {} found {} candidate photo(s)", offer.id, betterPhotos.size)
         return if (betterPhotos.isNotEmpty()) offer.copy(photos = betterPhotos) else offer
     }
 
@@ -55,28 +58,35 @@ class CianOfferFetcher(
     fun downloadPhotos(offer: CianOffer, proxy: ProxyCandidate?): List<ByteArray> =
         offer.photos.take(5).mapNotNull { url -> downloadImage(url, proxy) }
 
-    private fun downloadImage(url: String, proxy: ProxyCandidate?): ByteArray? =
-        try {
-            restClientFor(proxy).get()
+    private fun downloadImage(url: String, proxy: ProxyCandidate?): ByteArray? {
+        log.debug("Downloading photo {} via proxy {}", url, proxy)
+        return try {
+            val bytes = restClientFor(proxy).get()
                 .uri(url)
                 .header("User-Agent", USER_AGENT)
                 .header("Referer", REFERER)
                 .retrieve()
                 .body(ByteArray::class.java)
+            log.debug("Downloaded photo {} ({} bytes)", url, bytes?.size ?: 0)
+            bytes
         } catch (ex: Exception) {
             log.debug("Failed to download photo {}: {}", url, ex.message)
             null
         }
+    }
 
     private fun fetchHtml(url: String, proxy: ProxyCandidate?): String {
+        log.debug("Requesting {} via proxy {}", url, proxy)
         return try {
-            restClientFor(proxy).get()
+            val body = restClientFor(proxy).get()
                 .uri(url)
                 .header("User-Agent", USER_AGENT)
                 .header("Accept-Language", "ru-RU,ru;q=0.9")
                 .retrieve()
                 .body(String::class.java)
                 ?: throw CianBlockedException("Empty response body from $url via proxy $proxy")
+            log.debug("Received {} bytes from {}", body.length, url)
+            body
         } catch (ex: CianBlockedException) {
             throw ex
         } catch (ex: Exception) {

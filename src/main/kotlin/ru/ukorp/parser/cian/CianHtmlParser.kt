@@ -2,6 +2,7 @@ package ru.ukorp.parser.cian
 
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
 private val CAPTCHA_MARKERS = listOf("adfstat.yandex.ru", "Вы не робот", "SmartCaptcha", "showCaptcha")
@@ -17,13 +18,21 @@ private val OFFER_ID = Regex("""/(\d+)/""")
 @Component
 class CianHtmlParser {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun parse(document: Document): List<CianOffer> {
         val html = document.outerHtml()
         if (CAPTCHA_MARKERS.any { html.contains(it, ignoreCase = true) }) {
             throw CianBlockedException("cian.ru returned an anti-bot challenge page instead of search results")
         }
 
-        return document.select("div[data-testid=offer-card]").mapNotNull(::toOffer)
+        val cards = document.select("div[data-testid=offer-card]")
+        log.debug("Found {} offer card(s) in document", cards.size)
+        val offers = cards.mapNotNull(::toOffer)
+        if (offers.size != cards.size) {
+            log.debug("Skipped {} offer card(s) that could not be parsed", cards.size - offers.size)
+        }
+        return offers
     }
 
     private fun toOffer(card: Element): CianOffer? {

@@ -5,7 +5,6 @@ import org.mockito.Mockito.`when`
 import ru.ukorp.parser.config.ParserProperties
 import java.time.Duration
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class ProxyPoolTest {
@@ -21,26 +20,6 @@ class ProxyPoolTest {
     }
 
     @Test
-    fun `rotates round-robin across healthy proxies`() {
-        val pool = pool(listOf(proxyA, proxyB))
-
-        assertEquals(proxyA, pool.current())
-        assertEquals(proxyB, pool.current())
-        assertEquals(proxyA, pool.current())
-    }
-
-    @Test
-    fun `skips proxies marked bad`() {
-        val pool = pool(listOf(proxyA, proxyB))
-
-        assertEquals(proxyA, pool.current())
-        pool.markBad(proxyA)
-
-        assertEquals(proxyB, pool.current())
-        assertEquals(proxyB, pool.current())
-    }
-
-    @Test
     fun `returns null when no candidates are available`() {
         val pool = pool(emptyList())
 
@@ -48,17 +27,19 @@ class ProxyPoolTest {
     }
 
     @Test
-    fun `refetches once every candidate has been marked bad`() {
-        val provider = mock(ProxyProvider::class.java)
-        `when`(provider.fetch())
-            .thenReturn(listOf(proxyA))
-            .thenReturn(listOf(proxyB))
-        val properties = ParserProperties()
-        val pool = ProxyPool(provider, properties)
+    fun `returns null even with healthy candidates while proxy rotation is disabled`() {
+        val pool = pool(listOf(proxyA, proxyB))
 
-        assertEquals(proxyA, pool.current())
+        assertNull(pool.current())
+        assertNull(pool.current())
+    }
+
+    @Test
+    fun `markBad does not throw while proxy rotation is disabled`() {
+        val pool = pool(listOf(proxyA, proxyB))
+
         pool.markBad(proxyA)
 
-        assertEquals(proxyB, pool.current())
+        assertNull(pool.current())
     }
 }

@@ -1,0 +1,6 @@
+services:
+  cian-parser:
+    image: ghcr.io/ukorp/cian-parser:latest
+    container_name: cian-parser
+    env_file: .env
+    restart: unless-stopped

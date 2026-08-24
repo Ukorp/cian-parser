@@ -4,8 +4,7 @@ spring:
 
 parser:
   poll-interval: 5m
-  search-urls:
-    - "https://www.cian.ru/cat.php?currency=2&deal_type=rent&engine_version=2&foot_min=15&maxprice=50000&minarea=23&offer_type=flat&only_foot=2&region=1&room1=1&room9=1&sort=creation_date_desc&type=4"
+  search-urls: ${SEARCH_URLS}
   telegram:
     bot-token: ${BOT_TOKEN}
     chat-id: ${CHAT_ID}

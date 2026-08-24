@@ -18,6 +18,7 @@ class ProxyProvider(
     private val restClient = RestClient.create()
 
     fun fetch(): List<ProxyCandidate> {
+        log.debug("Fetching proxy list from {}", properties.proxy.sourceUrl)
         val body = try {
             restClient.get().uri(properties.proxy.sourceUrl).retrieve().body(String::class.java)
         } catch (ex: Exception) {
@@ -25,11 +26,9 @@ class ProxyProvider(
             null
         } ?: return emptyList()
 
-        val proxies = body.lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .mapNotNull { parseLine(it) }
-            .toList()
+        val lines = body.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+        val proxies = lines.mapNotNull { parseLine(it) }
+        log.debug("Parsed {} proxy candidate(s) from {} raw line(s)", proxies.size, lines.size)
 
         log.info("Fetched {} proxy candidates from {}", proxies.size, properties.proxy.sourceUrl)
         return proxies

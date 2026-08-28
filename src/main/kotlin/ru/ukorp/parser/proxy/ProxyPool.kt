@@ -29,13 +29,13 @@ class ProxyPool(
 
     /** Returns the next healthy proxy to try, or null if none are available (caller should go direct). */
     fun current(): ProxyCandidate? = lock.withLock {
-//        refreshIfNeeded()
-//        val healthy = candidates.filterNot { it in badProxies }
-//        if (healthy.isEmpty()) return@withLock null
-//        val proxy = healthy[cursor % healthy.size]
-//        cursor++
-//        proxy
-        null
+        refreshIfNeeded()
+        val healthy = candidates.filterNot { it in badProxies }
+        if (healthy.isEmpty()) return@withLock null
+        val proxy = healthy[cursor % healthy.size]
+        cursor++
+        proxy
+//        null
     }
 
     fun markBad(proxy: ProxyCandidate?) {

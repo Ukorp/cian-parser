@@ -1,6 +1,14 @@
 spring:
   application:
     name: parser
+  datasource:
+    url: jdbc:sqlite:${PARSER_STATE_DB_PATH:./data/parser-state.db}
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+  sql:
+    init:
+      mode: always
 
 logging:
   level:
@@ -8,10 +16,10 @@ logging:
 
 parser:
   poll-interval: 5m
-  search-urls: ${SEARCH_URLS}
   telegram:
     bot-token: ${BOT_TOKEN}
-    chat-id: ${CHAT_ID}
   proxy:
     source-url: "https://api.proxyscrape.com/v4/free-proxy-list/get?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all&limit=100"
     refresh-interval: 30m
+  state:
+    snapshot-interval: 30s

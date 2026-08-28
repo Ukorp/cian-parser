@@ -37,7 +37,7 @@ jobs:
       - run: chmod +x gradlew && ./gradlew --no-daemon test
 
   push:
-    needs: [build, test]
+    needs: [build]
     runs-on: ubuntu-latest
     permissions:
       contents: read

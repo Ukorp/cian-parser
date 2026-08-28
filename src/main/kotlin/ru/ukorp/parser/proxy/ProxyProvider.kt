@@ -3,6 +3,7 @@ package ru.ukorp.parser.proxy
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.body
 import ru.ukorp.parser.config.ParserProperties
 
 /**
@@ -20,7 +21,7 @@ class ProxyProvider(
     fun fetch(): List<ProxyCandidate> {
         log.debug("Fetching proxy list from {}", properties.proxy.sourceUrl)
         val body = try {
-            restClient.get().uri(properties.proxy.sourceUrl).retrieve().body(String::class.java)
+            restClient.get().uri(properties.proxy.sourceUrl).retrieve().body<String>()
         } catch (ex: Exception) {
             log.warn("Failed to fetch proxy list from {}: {}", properties.proxy.sourceUrl, ex.message)
             null

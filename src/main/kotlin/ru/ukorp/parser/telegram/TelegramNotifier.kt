@@ -9,26 +9,23 @@ import com.pengrad.telegrambot.request.SendPhoto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import ru.ukorp.parser.cian.CianOffer
-import ru.ukorp.parser.config.ParserProperties
 
 /**
  * Bot token / chat id come from config (see application.yaml).
  */
 @Component
 class TelegramNotifier(
-    private val properties: ParserProperties,
+    private val bot: TelegramBot
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    private val bot = TelegramBot(properties.telegram.botToken)
 
     /**
      * [photos] are raw image bytes, not URLs: images.cdn-cian.ru is hotlink-protected and rejects
      * Telegram's own server-side fetch, so photos must be uploaded directly (see
      * CianOfferFetcher.downloadPhotos) rather than referenced by URL.
      */
-    fun notifyNewOffer(offer: CianOffer, photos: List<ByteArray>) {
-        val chatId = properties.telegram.chatId
+    fun notifyNewOffer(offer: CianOffer, photos: List<ByteArray>, chatId: Long) {
         val caption = buildMessage(offer)
         log.debug("Sending Telegram notification for offer {} to chat {} ({} photo(s))", offer.id, chatId, photos.size)
 

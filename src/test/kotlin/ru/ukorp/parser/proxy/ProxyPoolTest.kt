@@ -5,6 +5,7 @@ import org.mockito.Mockito.`when`
 import ru.ukorp.parser.config.ParserProperties
 import java.time.Duration
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class ProxyPoolTest {
@@ -27,19 +28,22 @@ class ProxyPoolTest {
     }
 
     @Test
-    fun `returns null even with healthy candidates while proxy rotation is disabled`() {
+    fun `round-robins through healthy candidates`() {
         val pool = pool(listOf(proxyA, proxyB))
 
-        assertNull(pool.current())
-        assertNull(pool.current())
+        assertEquals(proxyA, pool.current())
+        assertEquals(proxyB, pool.current())
+        assertEquals(proxyA, pool.current())
     }
 
     @Test
-    fun `markBad does not throw while proxy rotation is disabled`() {
+    fun `markBad excludes a proxy from rotation`() {
         val pool = pool(listOf(proxyA, proxyB))
+        pool.current() // trigger the initial fetch so candidates are populated before marking one bad
 
         pool.markBad(proxyA)
 
-        assertNull(pool.current())
+        assertEquals(proxyB, pool.current())
+        assertEquals(proxyB, pool.current())
     }
 }

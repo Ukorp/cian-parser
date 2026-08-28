@@ -2,6 +2,7 @@ package ru.ukorp.parser.cian
 
 import org.jsoup.Jsoup
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
@@ -21,7 +22,8 @@ class CianOfferFetcher(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun fetch(searchUrl: String, proxy: ProxyCandidate?): List<CianOffer> {
+    @Cacheable("offers")
+    fun fetch(searchUrl: String, proxy: ProxyCandidate? = null): List<CianOffer> {
         val html = fetchHtml(searchUrl, proxy)
         val document = Jsoup.parse(html, searchUrl)
         val offers = htmlParser.parse(document)
@@ -35,7 +37,7 @@ class CianOfferFetcher(
      * (i.e. genuinely new ones), so the extra request per poll cycle stays bounded. Any failure
      * (blocked/timeout/parse miss) just falls back to the photos already found on the search card.
      */
-    fun enrichWithBetterPhotos(offer: CianOffer, proxy: ProxyCandidate?): CianOffer {
+    fun enrichWithBetterPhotos(offer: CianOffer, proxy: ProxyCandidate? = null): CianOffer {
         val html = try {
             fetchHtml(offer.url, proxy)
         } catch (ex: Exception) {
@@ -55,7 +57,7 @@ class CianOfferFetcher(
      * (with the same headers that already work for the HTML requests) and uploading them directly
      * sidesteps that entirely. Photos that fail to download are silently skipped.
      */
-    fun downloadPhotos(offer: CianOffer, proxy: ProxyCandidate?): List<ByteArray> =
+    fun downloadPhotos(offer: CianOffer, proxy: ProxyCandidate? = null): List<ByteArray> =
         offer.photos.take(5).mapNotNull { url -> downloadImage(url, proxy) }
 
     private fun downloadImage(url: String, proxy: ProxyCandidate?): ByteArray? {
